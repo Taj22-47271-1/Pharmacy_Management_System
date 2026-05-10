@@ -7,27 +7,27 @@ export enum UserRole {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  fullName: string;
+  fullName!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column()
-  password: string;
+  password!: string;
 
   @Column({
     type: 'enum',
     enum: UserRole,
     default: UserRole.ADMIN,
   })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({ nullable: true })
-  otp: string;
+  otp!: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  otpExpiry: Date;
+  otpExpiry!: Date;
 }
