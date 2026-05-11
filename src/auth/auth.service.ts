@@ -12,7 +12,6 @@ import { UserRole } from '../users/user.entity';
 
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -88,8 +87,8 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       throw new BadRequestException('User not found');
@@ -97,16 +96,17 @@ export class AuthService {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const expiry = new Date();
-    expiry.setMinutes(expiry.getMinutes() + 5);
+    const otpExpiry = new Date();
+    otpExpiry.setMinutes(otpExpiry.getMinutes() + 5);
 
     await this.usersService.updateUser(user.id, {
-      otp,
-      otpExpiry: expiry,
+      otp: otp,
+      otpExpiry: otpExpiry,
     });
-console.log('YOUR OTP IS:', otp); // Log OTP for testing
-    //await 
-    //this.mailService.sendOtpEmail(user.email, otp);
+
+    console.log('YOUR OTP IS:', otp);
+
+    await this.mailService.sendOtpEmail(user.email, otp);
 
     return {
       message: 'OTP sent to email',

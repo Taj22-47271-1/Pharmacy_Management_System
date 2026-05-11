@@ -8,6 +8,7 @@ export class MailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
+
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
@@ -15,21 +16,29 @@ export class MailService {
     });
   }
 
-  async sendOtpEmail(to: string, otp: string) {
-    await this.transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is: ${otp}`,
-      html: `
-        <h2>Your OTP Code</h2>
-        <p>Your OTP code is:</p>
-        <h1>${otp}</h1>
-      `,
-    });
+  async sendOtpEmail(email: string, otp: string) {
+    try {
+      const info = await this.transporter.sendMail({
+        from: process.env.MAIL_USER,
+        to: email,
+        subject: 'Password Reset OTP',
 
-    return {
-      message: 'OTP sent to email',
-    };
+        html: `
+          <h2>Password Reset OTP</h2>
+          <p>Your OTP is:</p>
+          <h1>${otp}</h1>
+        `,
+      });
+
+      console.log('MAIL SENT:', info.response);
+
+      return {
+        message: 'OTP sent successfully',
+      };
+    } catch (error) {
+      console.log('MAIL ERROR:', error);
+
+      throw error;
+    }
   }
 }
