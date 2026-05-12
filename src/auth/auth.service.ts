@@ -140,6 +140,18 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
+    if (user.otp !== dto.otp) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    if (!user.otpExpiry || new Date() > user.otpExpiry) {
+      throw new BadRequestException('OTP expired');
+    }
+
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
 
     await this.usersService.updateUser(user.id, {
