@@ -14,6 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -164,4 +165,33 @@ export class AuthService {
       message: 'Password reset successful',
     };
   }
+  async changePassword(userData: any, dto: ChangePasswordDto) {
+  const user = await this.usersService.findById(userData.sub);
+
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
+
+  const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+
+  if (!isMatch) {
+    throw new BadRequestException('Current password is incorrect');
+  }
+
+  if (dto.newPassword !== dto.confirmPassword) {
+    throw new BadRequestException(
+      'New password and confirm password do not match',
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+  await this.usersService.updateUser(user.id, {
+    password: hashedPassword,
+  });
+
+  return {
+    message: 'Password changed successfully',
+  };
+}
 }

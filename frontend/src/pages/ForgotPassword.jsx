@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 function ForgotPassword() {
+
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
 
   const handleSubmit = async (e) => {
@@ -42,7 +45,15 @@ function ForgotPassword() {
           <Link to="/reset-password" className="text-blue-600">
             Verify OTP & Reset Password
           </Link>
+
         </div>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="back-btn"
+        >
+          Back to Login
+        </button>
       </form>
     </div>
   );
