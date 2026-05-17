@@ -102,6 +102,7 @@ export class MedicinesService {
 
   async remove(id: number) {
     const medicine = await this.findOne(id);
+
     await this.medicineRepo.remove(medicine);
 
     return {

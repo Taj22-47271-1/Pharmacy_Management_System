@@ -7,6 +7,8 @@ function Dashboard() {
 
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [search, setSearch] = useState('');
+  const [editingMedicineId, setEditingMedicineId] = useState(null);
 
   const [supplierForm, setSupplierForm] = useState({
     name: '',
@@ -24,15 +26,10 @@ function Dashboard() {
   });
 
   const fetchData = async () => {
-    try {
-      const medRes = await API.get('/medicines');
-      const supRes = await API.get('/suppliers');
-
-      setMedicines(medRes.data);
-      setSuppliers(supRes.data);
-    } catch (error) {
-      console.log(error);
-    }
+    const medRes = await API.get('/medicines');
+    const supRes = await API.get('/suppliers');
+    setMedicines(medRes.data);
+    setSuppliers(supRes.data);
   };
 
   useEffect(() => {
@@ -41,67 +38,77 @@ function Dashboard() {
 
   const addSupplier = async (e) => {
     e.preventDefault();
-
-    try {
-      await API.post('/suppliers', supplierForm);
-      alert('Supplier Added');
-
-      setSupplierForm({
-        name: '',
-        phone: '',
-        address: '',
-      });
-
-      fetchData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Supplier add failed');
-    }
+    await API.post('/suppliers', supplierForm);
+    alert('Supplier Added');
+    setSupplierForm({ name: '', phone: '', address: '' });
+    fetchData();
   };
 
-  const addMedicine = async (e) => {
+  const saveMedicine = async (e) => {
     e.preventDefault();
 
-    try {
-      await API.post('/medicines', {
-        name: medicineForm.name,
-        category: medicineForm.category,
-        price: Number(medicineForm.price),
-        quantity: Number(medicineForm.quantity),
-        expiryDate: medicineForm.expiryDate,
-        supplierId: Number(medicineForm.supplierId),
-      });
+    const payload = {
+      name: medicineForm.name,
+      category: medicineForm.category,
+      price: Number(medicineForm.price),
+      quantity: Number(medicineForm.quantity),
+      expiryDate: medicineForm.expiryDate,
+      supplierId: Number(medicineForm.supplierId),
+    };
 
+    if (editingMedicineId) {
+      await API.patch(`/medicines/${editingMedicineId}`, payload);
+      alert('Medicine Updated');
+      setEditingMedicineId(null);
+    } else {
+      await API.post('/medicines', payload);
       alert('Medicine Added');
-
-      setMedicineForm({
-        name: '',
-        category: '',
-        price: '',
-        quantity: '',
-        expiryDate: '',
-        supplierId: '',
-      });
-
-      fetchData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Medicine add failed');
     }
+
+    setMedicineForm({
+      name: '',
+      category: '',
+      price: '',
+      quantity: '',
+      expiryDate: '',
+      supplierId: '',
+    });
+
+    fetchData();
+  };
+
+  const startEditMedicine = (medicine) => {
+    setEditingMedicineId(medicine.id);
+
+    setMedicineForm({
+      name: medicine.name,
+      category: medicine.category,
+      price: medicine.price,
+      quantity: medicine.quantity,
+      expiryDate: medicine.expiryDate,
+      supplierId: medicine.supplier?.id || '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingMedicineId(null);
+
+    setMedicineForm({
+      name: '',
+      category: '',
+      price: '',
+      quantity: '',
+      expiryDate: '',
+      supplierId: '',
+    });
   };
 
   const deleteMedicine = async (id) => {
-    const confirmDelete = window.confirm(
-      'Are you sure you want to delete this medicine?',
-    );
+    if (!window.confirm('Are you sure you want to delete this medicine?')) return;
 
-    if (!confirmDelete) return;
-
-    try {
-      await API.delete(`/medicines/${id}`);
-      alert('Medicine Deleted');
-      fetchData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Delete failed');
-    }
+    await API.delete(`/medicines/${id}`);
+    alert('Medicine Deleted');
+    fetchData();
   };
 
   const logout = () => {
@@ -113,33 +120,25 @@ function Dashboard() {
     (medicine) => Number(medicine.quantity) <= 10,
   ).length;
 
+  const filteredMedicines = medicines.filter((medicine) =>
+    medicine.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
     <div className="dashboard">
       <div className="dashboard-top">
         <h1 className="dashboard-title">Pharmacy Admin Dashboard</h1>
 
         <div className="top-buttons">
-          <button
-            type="button"
-            onClick={() => navigate('/suppliers')}
-            className="supplier-btn"
-          >
+          <button type="button" onClick={() => navigate('/suppliers')} className="supplier-btn">
             Suppliers
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate('/change-password')}
-            className="password-btn"
-          >
+          <button type="button" onClick={() => navigate('/change-password')} className="password-btn">
             Change Password
           </button>
 
-          <button
-            type="button"
-            onClick={logout}
-            className="logout-btn"
-          >
+          <button type="button" onClick={logout} className="logout-btn">
             Logout
           </button>
         </div>
@@ -170,12 +169,7 @@ function Dashboard() {
             type="text"
             placeholder="Supplier Name"
             value={supplierForm.name}
-            onChange={(e) =>
-              setSupplierForm({
-                ...supplierForm,
-                name: e.target.value,
-              })
-            }
+            onChange={(e) => setSupplierForm({ ...supplierForm, name: e.target.value })}
             required
           />
 
@@ -183,12 +177,7 @@ function Dashboard() {
             type="text"
             placeholder="Phone"
             value={supplierForm.phone}
-            onChange={(e) =>
-              setSupplierForm({
-                ...supplierForm,
-                phone: e.target.value,
-              })
-            }
+            onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })}
             required
           />
 
@@ -196,12 +185,7 @@ function Dashboard() {
             type="text"
             placeholder="Address"
             value={supplierForm.address}
-            onChange={(e) =>
-              setSupplierForm({
-                ...supplierForm,
-                address: e.target.value,
-              })
-            }
+            onChange={(e) => setSupplierForm({ ...supplierForm, address: e.target.value })}
             required
           />
 
@@ -210,19 +194,14 @@ function Dashboard() {
           </button>
         </form>
 
-        <form onSubmit={addMedicine} className="form-card">
-          <h2>Add Medicine</h2>
+        <form onSubmit={saveMedicine} className="form-card">
+          <h2>{editingMedicineId ? 'Update Medicine' : 'Add Medicine'}</h2>
 
           <input
             type="text"
             placeholder="Medicine Name"
             value={medicineForm.name}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                name: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, name: e.target.value })}
             required
           />
 
@@ -230,12 +209,7 @@ function Dashboard() {
             type="text"
             placeholder="Category"
             value={medicineForm.category}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                category: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, category: e.target.value })}
             required
           />
 
@@ -243,12 +217,7 @@ function Dashboard() {
             type="number"
             placeholder="Price"
             value={medicineForm.price}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                price: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, price: e.target.value })}
             required
           />
 
@@ -256,35 +225,20 @@ function Dashboard() {
             type="number"
             placeholder="Quantity"
             value={medicineForm.quantity}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                quantity: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, quantity: e.target.value })}
             required
           />
 
           <input
             type="date"
             value={medicineForm.expiryDate}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                expiryDate: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, expiryDate: e.target.value })}
             required
           />
 
           <select
             value={medicineForm.supplierId}
-            onChange={(e) =>
-              setMedicineForm({
-                ...medicineForm,
-                supplierId: e.target.value,
-              })
-            }
+            onChange={(e) => setMedicineForm({ ...medicineForm, supplierId: e.target.value })}
             required
           >
             <option value="">Select Supplier</option>
@@ -297,15 +251,29 @@ function Dashboard() {
           </select>
 
           <button type="submit" className="add-medicine-btn">
-            Add Medicine
+            {editingMedicineId ? 'Update Medicine' : 'Add Medicine'}
           </button>
+
+          {editingMedicineId && (
+            <button type="button" onClick={cancelEdit} className="cancel-btn">
+              Cancel Edit
+            </button>
+          )}
         </form>
       </div>
 
       <div className="table-card">
         <h2>Medicine List</h2>
 
-        {medicines.length === 0 ? (
+        <input
+          type="text"
+          placeholder="Search Medicine..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
+
+        {filteredMedicines.length === 0 ? (
           <p className="empty-text">No medicines found.</p>
         ) : (
           <table>
@@ -322,7 +290,7 @@ function Dashboard() {
             </thead>
 
             <tbody>
-              {medicines.map((medicine) => (
+              {filteredMedicines.map((medicine) => (
                 <tr key={medicine.id}>
                   <td>{medicine.name}</td>
                   <td>{medicine.category}</td>
@@ -331,11 +299,11 @@ function Dashboard() {
                   <td>{medicine.supplier?.name || 'N/A'}</td>
                   <td>{medicine.expiryDate}</td>
                   <td>
-                    <button
-                      type="button"
-                      onClick={() => deleteMedicine(medicine.id)}
-                      className="delete-btn"
-                    >
+                    <button type="button" onClick={() => startEditMedicine(medicine)} className="edit-btn">
+                      Edit
+                    </button>
+
+                    <button type="button" onClick={() => deleteMedicine(medicine.id)} className="delete-btn">
                       Delete
                     </button>
                   </td>

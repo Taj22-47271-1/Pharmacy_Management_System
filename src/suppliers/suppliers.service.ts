@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { Supplier } from './supplier.entity';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @Injectable()
 export class SuppliersService {
@@ -35,6 +36,15 @@ export class SuppliersService {
 
     return supplier;
   }
+  async update(id: number, dto: UpdateSupplierDto) {
+  const supplier = await this.findOne(id);
+
+  supplier.name = dto.name ?? supplier.name;
+  supplier.phone = dto.phone ?? supplier.phone;
+  supplier.address = dto.address ?? supplier.address;
+
+  return this.supplierRepo.save(supplier);
+}
 
   async remove(id: number) {
     const supplier = await this.findOne(id);

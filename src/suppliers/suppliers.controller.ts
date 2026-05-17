@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { SuppliersService } from './suppliers.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
+import { UpdateSupplierDto } from './dto/update-supplier.dto';
 @ApiTags('Admin Suppliers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -31,5 +31,10 @@ export class SuppliersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.suppliersService.remove(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateSupplierDto) {
+    return this.suppliersService.update(+id, dto);
   }
 }

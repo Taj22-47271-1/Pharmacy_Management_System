@@ -50,9 +50,12 @@ export class MedicinesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateMedicineDto) {
-    return this.medicinesService.update(+id, dto);
-  }
+update(
+  @Param('id') id: string,
+  @Body() dto: UpdateMedicineDto,
+) {
+  return this.medicinesService.update(+id, dto);
+}
 
   @Delete(':id')
   remove(@Param('id') id: string) {
