@@ -28,6 +28,9 @@ export class Medicine {
     @Column({ nullable: true })
     description!: string;
 
+    @Column({ nullable: true })
+    image!: string;
+
     @OneToMany(() => Cart, (cart) => cart.medicine)
     cartItems!: Cart[];
 
