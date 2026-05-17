@@ -1,26 +1,62 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCartDto } from './dto/create-cart.dto';
-import { UpdateCartDto } from './dto/update-cart.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { Repository } from 'typeorm';
+
+import { Cart } from './entities/cart.entity';
+import { User } from '../users/entities/user.entity';
+import { Medicine } from '../medicines/entities/medicine.entity';
+
+import { AddCartDto } from './dto/add-cart.dto';
 
 @Injectable()
 export class CartService {
-  create(createCartDto: CreateCartDto) {
-    return 'This action adds a new cart';
+  constructor(
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Medicine)
+    private readonly medicineRepository: Repository<Medicine>,
+  ) { }
+
+  async addToCart(userId: number, dto: AddCartDto) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    const medicine = await this.medicineRepository.findOne({
+      where: { id: dto.medicineId },
+    });
+
+    if (!medicine) {
+      throw new NotFoundException('Medicine not found');
+    }
+
+    const cart = this.cartRepository.create({
+      user: user!,
+      medicine,
+      quantity: dto.quantity,
+    });
+
+    await this.cartRepository.save(cart);
+
+    return {
+      message: 'Medicine added to cart',
+      cart,
+    };
   }
 
-  findAll() {
-    return `This action returns all cart`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} cart`;
-  }
-
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cart`;
+  async getMyCart(userId: number) {
+    return this.cartRepository.find({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      relations: ['medicine'],
+    });
   }
 }
